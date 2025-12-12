@@ -1,2 +1,9 @@
-# Architecture_logicielle_ynov_docs
-Documents et code pour répondre aux exercices d'architecture logicielle Ynov
+# Architecture Logicielle - M2 Master Ynov Expert développement WEB
+
+Je rassemble ici les documents et code pour répondre aux exercices d'architecture logicielle Ynov
+
+Séance 1 - Répertorié ailleur (voir la tâche Moodle)
+
+Séance 3 - Voici les liens et documents : 
+Lien vers doc des vue du modèle 4+1 (: <a href="/">Cliquez ici</a>
+Lien miro : à venir
