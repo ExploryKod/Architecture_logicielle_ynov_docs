@@ -1,5 +1,12 @@
 # M2 Expert développeur web - Ynov
 
+Les 4 parties (liens interne au doc) : 
+
+- [Vue logique](#mod%C3%A8le-41---vue-logique)
+- [Vue développement](#mod%C3%A8le-41---vue-d%C3%A9veloppement)
+- [Vue processus](#mod%C3%A8le-41---vue-processus)
+- [Vue déploiement](#mod%C3%A8le-41-vue-de-d%C3%A9ploiement)
+
 ## Modèle 4+1 - Vue Logique 
 
 Rappel du contexte du projet : 
@@ -103,12 +110,7 @@ III/ Diagramme de Classes (à venir)
 
 ## Modèle 4+1 - Vue Processus
 
-Plateforme d’apprentissage augmentée par IA
-
 La vue des processus décrit comment les services fonctionnent à l’exécution, indépendamment de l’organisation du code (vue de développement) ou du déploiement (infrastructure).
-Elle montre les enchaînements réels des opérations, les services mobilisés et les interactions entre utilisateurs, modules et composants.
-
-# Vue des Processus (Runtime)
 
 ### Scénario 1 — Création d’un parcours par un professeur
 
