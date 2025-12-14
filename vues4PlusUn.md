@@ -275,9 +275,17 @@ Elle montre les enchaînements réels des opérations, les services mobilisés e
 
 **Composant** : StatisticsAggregator
 
-# Vue de déploiement
+## Modèle 4+1: Vue de déploiement
 
-### Schéma de déploiement simpifié
+La **vue de déploiement** représente l'**infrastructure physique** et la **distribution des composants logiciels** sur les différents serveurs. Nous allons utiliser des schémas en markdown pour la décrire avec dans un premier temps une vision de l'application elle-même puis dans un second temps l'infrastructure complète. 
+
+L'infrastructure complète se distingue via deux versions : 
+- Une version du MVC qui sera hébergé sur un ou plusieurs VPS hostinger
+- Une version de production finale qui sera héberger sur AWS
+
+### Schéma de l'application (vue applicative seulement)
+
+Voici tout d'abord une vue de l'application sans l'infrastructure de déploiement complet mais simplement une première vue pour mieux se repérer. 
 ```
 ┌─────────────────────┐
 │  Interface Web      │
@@ -309,7 +317,340 @@ Elle montre les enchaînements réels des opérations, les services mobilisés e
 - WebSocket pour communication temps réel
 - Intégration avec modèles IA externes
 
-# Vue des scénarios (+1)
+### Schéma de déploiement (détails avec deux versions: le MVC et la vue de production finale)
+
+##### Architecture de déploiement : MVP sur un VPS Hostinger
+
+```
+┌──────────────────────────────────────────────┐
+│         VPS Hostinger (Europe - RGPD)        │
+├──────────────────────────────────────────────┤
+│                                              │
+│  ┌────────────────────────────────────┐     │
+│  │   Docker Compose Stack             │     │
+│  ├────────────────────────────────────┤     │
+│  │                                    │     │
+│  │  ┌──────────────────────┐         │     │
+│  │  │  Container: Frontend │         │     │
+│  │  │  (Next.js - SSR)     │         │     │
+│  │  │  Port: 3000          │         │     │
+│  │  └──────────────────────┘         │     │
+│  │                                    │     │
+│  │  ┌──────────────────────┐         │     │
+│  │  │  Container: API      │         │     │
+│  │  │  (Golang)            │         │     │
+│  │  │  Port: 8080          │         │     │
+│  │  └──────────────────────┘         │     │
+│  │                                    │     │
+│  │  ┌──────────────────────┐         │     │
+│  │  │  Container: WebSocket│         │     │
+│  │  │  (Chat temps réel)   │         │     │
+│  │  │  Port: 8081          │         │     │
+│  │  └──────────────────────┘         │     │
+│  │                                    │     │
+│  │  ┌──────────────────────┐         │     │
+│  │  │  Container: PostgreSQL│        │     │
+│  │  │  Port: 5432          │         │     │
+│  │  │  + Volume persistant │         │     │
+│  │  └──────────────────────┘         │     │
+│  │                                    │     │
+│  │  ┌──────────────────────┐         │     │
+│  │  │  Container: Redis    │         │     │
+│  │  │  (Cache + Sessions)  │         │     │
+│  │  │  Port: 6379          │         │     │
+│  │  └──────────────────────┘         │     │
+│  │                                    │     │
+│  │  ┌──────────────────────┐         │     │
+│  │  │  Container: Ollama   │         │     │
+│  │  │  (LLM local - dev)   │         │     │
+│  │  │  Port: 11434         │         │     │
+│  │  └──────────────────────┘         │     │
+│  │                                    │     │
+│  └────────────────────────────────────┘     │
+│                                              │
+│  ┌────────────────────────────────────┐     │
+│  │   Nginx Reverse Proxy              │     │
+│  │   - SSL/TLS (Let's Encrypt)        │     │
+│  │   - Port 80 → 443                  │     │
+│  └────────────────────────────────────┘     │
+│                                              │
+└──────────────────────────────────────────────┘
+```
+
+**Configuration de ce VPS :**
+- **CPU :** 4 vCPUs minimum
+- **RAM :** 16 GB (nécessaire pour Ollama + conteneurs)
+- **Stockage :** 200 GB SSD
+- **Bande passante :** Illimitée
+- **Localisation :** Amsterdam ou Francfort (RGPD)
+  
+##### Architecture de déploiement : environnement de production final avec AWS Multi-AZ.
+
+ Nous créons l'app en production sur une architecture Haute Disponibilité avec l'aide des options offertes par AWS
+
+
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    AWS Region: eu-west-1                     │
+│                      (Irlande - RGPD)                        │
+└──────────────────────────────────────────────────────────────┘
+                             │
+                ┌────────────┴────────────┐
+                │                         │
+         ┌──────▼──────┐          ┌──────▼──────┐
+         │Availability │          │Availability │
+         │   Zone A    │          │   Zone B    │
+         └─────────────┘          └─────────────┘
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                   COUCHE RÉSEAU / SÉCURITÉ                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  AWS Application Load Balancer (ALB)          │         │
+│  │  - Health checks                              │         │
+│  │  - SSL/TLS Termination                        │         │
+│  │  - Distribution de charge                     │         │
+│  └───────────────────────────────────────────────┘         │
+│                                                             │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  AWS WAF (Web Application Firewall)           │         │
+│  │  - Protection DDoS                            │         │
+│  │  - Filtrage requêtes malveillantes            │         │
+│  └───────────────────────────────────────────────┘         │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+                             │
+                ┌────────────┴────────────┐
+                │                         │
+                ▼                         ▼
+
+┌──────────────────────┐      ┌──────────────────────┐
+│   PUBLIC SUBNET A    │      │   PUBLIC SUBNET B    │
+│   (DMZ)              │      │   (DMZ)              │
+├──────────────────────┤      ├──────────────────────┤
+│                      │      │                      │
+│  EC2: NAT Gateway    │      │  EC2: NAT Gateway    │
+│                      │      │                      │
+└──────────────────────┘      └──────────────────────┘
+         │                             │
+         └──────────┬──────────────────┘
+                    │
+     ┌──────────────┴──────────────┐
+     │                             │
+     ▼                             ▼
+
+┌──────────────────────┐      ┌──────────────────────┐
+│  PRIVATE SUBNET A    │      │  PRIVATE SUBNET B    │
+│  (Application Tier)  │      │  (Application Tier)  │
+├──────────────────────┤      ├──────────────────────┤
+│                      │      │                      │
+│ ┌────────────────┐  │      │ ┌────────────────┐  │
+│ │ Auto Scaling   │  │      │ │ Auto Scaling   │  │
+│ │ Group          │  │      │ │ Group          │  │
+│ ├────────────────┤  │      │ ├────────────────┤  │
+│ │                │  │      │ │                │  │
+│ │ EC2: Frontend  │  │      │ │ EC2: Frontend  │  │
+│ │ (Next.js)      │  │      │ │ (Next.js)      │  │
+│ │ Min: 2         │  │      │ │ Min: 2         │  │
+│ │ Max: 10        │  │      │ │ Max: 10        │  │
+│ │                │  │      │ │                │  │
+│ └────────────────┘  │      │ └────────────────┘  │
+│                      │      │                      │
+│ ┌────────────────┐  │      │ ┌────────────────┐  │
+│ │ Auto Scaling   │  │      │ │ Auto Scaling   │  │
+│ │ Group          │  │      │ │ Group          │  │
+│ ├────────────────┤  │      │ ├────────────────┤  │
+│ │                │  │      │ │                │  │
+│ │ EC2: API       │  │      │ │ EC2: API       │  │
+│ │ (Golang)       │  │      │ │ (Golang)       │  │
+│ │ Min: 3         │  │      │ │ Min: 3         │  │
+│ │ Max: 15        │  │      │ │ Max: 15        │  │
+│ │                │  │      │ │                │  │
+│ └────────────────┘  │      │ └────────────────┘  │
+│                      │      │                      │
+│ ┌────────────────┐  │      │ ┌────────────────┐  │
+│ │ EC2: WebSocket │  │      │ │ EC2: WebSocket │  │
+│ │ (Chat/Visio)   │  │      │ │ (Chat/Visio)   │  │
+│ │ Min: 2         │  │      │ │ Min: 2         │  │
+│ └────────────────┘  │      │ └────────────────┘  │
+│                      │      │                      │
+└──────────────────────┘      └──────────────────────┘
+         │                             │
+         └──────────┬──────────────────┘
+                    │
+     ┌──────────────┴──────────────┐
+     │                             │
+     ▼                             ▼
+
+┌──────────────────────┐      ┌──────────────────────┐
+│  PRIVATE SUBNET C    │      │  PRIVATE SUBNET D    │
+│  (Data Tier)         │      │  (Data Tier)         │
+├──────────────────────┤      ├──────────────────────┤
+│                      │      │                      │
+│ ┌────────────────┐  │      │ ┌────────────────┐  │
+│ │ RDS PostgreSQL │  │      │ │ RDS PostgreSQL │  │
+│ │ (Master)       │◄─┼──────┼─┤ (Read Replica) │  │
+│ │                │  │      │ │                │  │
+│ │ Multi-AZ       │  │      │ │                │  │
+│ │ Automated      │  │      │ │                │  │
+│ │ Backups        │  │      │ │                │  │
+│ └────────────────┘  │      │ └────────────────┘  │
+│                      │      │                      │
+│ ┌────────────────┐  │      │ ┌────────────────┐  │
+│ │ ElastiCache    │  │      │ │ ElastiCache    │  │
+│ │ Redis Cluster  │◄─┼──────┼─┤ Redis Cluster  │  │
+│ │ (Primary)      │  │      │ │ (Replica)      │  │
+│ └────────────────┘  │      │ └────────────────┘  │
+│                      │      │                      │
+└──────────────────────┘      └──────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                   SERVICES EXTERNES AWS                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────┐           │
+│  │  Amazon S3 (Stockage)                       │           │
+│  │  - Fichiers uploadés (PDFs, images)         │           │
+│  │  - Backups base de données                  │           │
+│  │  - Logs applicatifs                         │           │
+│  │  - Versioning activé                        │           │
+│  └─────────────────────────────────────────────┘           │
+│                                                             │
+│  ┌─────────────────────────────────────────────┐           │
+│  │  Amazon SES (Email)                         │           │
+│  │  - Envoi notifications                      │           │
+│  │  - Invitations utilisateurs                 │           │
+│  └─────────────────────────────────────────────┘           │
+│                                                             │
+│  ┌─────────────────────────────────────────────┐           │
+│  │  Amazon CloudWatch                          │           │
+│  │  - Monitoring CPU/RAM/Network               │           │
+│  │  - Logs centralisés                         │           │
+│  │  - Alarmes automatiques                     │           │
+│  └─────────────────────────────────────────────┘           │
+│                                                             │
+│  ┌─────────────────────────────────────────────┐           │
+│  │  AWS Secrets Manager                        │           │
+│  │  - Clés API OpenAI/Anthropic                │           │
+│  │  - Credentials DB                           │           │
+│  │  - Tokens JWT                               │           │
+│  └─────────────────────────────────────────────┘           │
+│                                                             │
+│  ┌─────────────────────────────────────────────┐           │
+│  │  Amazon SageMaker (ou EC2 GPU)              │           │
+│  │  - Hébergement modèles IA custom            │           │
+│  │  - Inférence Langchain + RAG                │           │
+│  │  - Instance GPU (g4dn.xlarge)               │           │
+│  └─────────────────────────────────────────────┘           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+##### Architecture de déploiement : couche de sécurité.
+Aussi, nous devons prendre en compte la sécurité, voici les zones de Sécurité par niveau :
+
+```
+┌──────────────────────────────────────────┐
+│  ZONE PUBLIQUE (Internet)                │
+│  - CloudFlare WAF                        │
+│  - AWS ALB + AWS WAF                     │
+└──────────────┬───────────────────────────┘
+               │ Firewall
+               ▼
+┌──────────────────────────────────────────┐
+│  ZONE DMZ (Public Subnets)               │
+│  - NAT Gateways seulement                │
+│  - Pas d'applications exposées           │
+└──────────────┬───────────────────────────┘
+               │ Security Groups
+               ▼
+┌──────────────────────────────────────────┐
+│  ZONE APPLICATION (Private Subnets)      │
+│  - Frontend instances                    │
+│  - API instances                         │
+│  - WebSocket instances                   │
+│  Règles :                                │
+│  • Accepte traffic depuis ALB uniquement │
+│  • Peut sortir vers internet via NAT     │
+└──────────────┬───────────────────────────┘
+               │ Security Groups stricts
+               ▼
+┌──────────────────────────────────────────┐
+│  ZONE DATA (Private Subnets isolés)      │
+│  - RDS PostgreSQL                        │
+│  - ElastiCache Redis                     │
+│  Règles :                                │
+│  • Accepte traffic APP tier uniquement   │
+│  • AUCUN accès internet                  │
+│  • Chiffrement en transit (TLS)          │
+│  • Chiffrement at rest (AES-256)         │
+└──────────────────────────────────────────┘
+```
+
+##### Architecture de déploiement : vue globale.
+
+Voici enfin un schéma simplifié qui récapitule notre architecture de production (donc pas celle du MVC). 
+
+```
+                    INTERNET
+                       │
+                       ▼
+              ┌─────────────────┐
+              │   CloudFlare    │
+              │   + Route 53    │
+              └────────┬────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │   AWS ALB       │
+              │   + WAF         │
+              └────────┬────────┘
+                       │
+         ┌─────────────┼─────────────┐
+         │             │             │
+         ▼             ▼             ▼
+    ┌────────┐   ┌────────┐   ┌──────────┐
+    │Frontend│   │  API   │   │WebSocket │
+    │Next.js │   │ Golang │   │Chat/Visio│
+    │        │   │        │   │          │
+    │Auto    │   │Auto    │   │Dedicated │
+    │Scale   │   │Scale   │   │Instances │
+    │2-10    │   │3-15    │   │2-4       │
+    └───┬────┘   └───┬────┘   └────┬─────┘
+        │            │             │
+        └────────────┼─────────────┘
+                     │
+         ┌───────────┼───────────┐
+         │           │           │
+         ▼           ▼           ▼
+    ┌────────┐  ┌───────┐  ┌─────────┐
+    │   RDS  │  │ Redis │  │    S3   │
+    │Postgres│  │Cache  │  │ Fichiers│
+    │Multi-AZ│  │Cluster│  │         │
+    └────────┘  └───────┘  └─────────┘
+
+              ┌──────────────┐
+              │ EC2 GPU      │
+              │ SageMaker    │
+              │ (IA/RAG)     │
+              └──────────────┘
+```
+
+Cette architecture hybride VPS (pour le MVC) + AWS (production finale) a les atout suivants :
+
+**Scalabilité** : Auto-scaling horizontal sur tous les tiers
+**Haute disponibilité** : Multi-AZ, load balancing, failover auto
+**Sécurité** : Isolation réseau, chiffrement, RGPD-compliant
+**Performance** : CDN, caching, instances optimisées
+**Maintenabilité** : Infrastructure as Code, monitoring complet
+**Coût maîtrisé** : Optimisations possibles (-30-40%)
+
+La séparation claire entre environnement de développement (VPS simple) et production (AWS managé) permet d'itérer rapidement tout en garantissant la robustesse en production.
+
+## Modèle 4+1 - Vue des scénarios (+1)
 
 ### Scénario 1 — Création d’un parcours par un professeur
  
