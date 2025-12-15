@@ -105,6 +105,27 @@ Nous avons décidé de créer l'application en deux étapes :
 - Une première avec l'usage d'un VPS pour un MVC de l'application pour tester le marché et les retours utilisateurs
 - Une seconde avec un déploiement qui doit tenir la charge via un service AWS de cloud.
 
+Pour avoir plus de détail sur cette vue avec les schémas complet : se référer à la vue dans le détail.
+
+Nous récapitulons ici l'architecture choisi. Que ce soit sur AWS ou sur le VPS, nous conteneurisons nos environnements via Docker. 
+Nous parlons donc sous un format de conteneurs isolés et portable. AWS permet une élasticité que le VPS ne permet pas mais s'articule bien avec Docker aussi. 
+
+Nous avons un monolithe modulaire à hébergé qui n'est pas stricto-censu du micro-service car une base de donnée peut être partagé entre plusieurs services. Pour autant, les modules appartiennent à des conteneurs bien séparés et autonome sur certains plans ce qui permet une grande flexibilité pour réorganiser les liens entre ces conteneurs. AWS pourra permettre en outre d'offrir via des load balancer et aussi des outils comme Kubernetes la capacité de créer des outils de backup ou des système de copies (avec un principal et ses répliques (replica) prêt à le remplacer). AWS permet même d'organiser cela sur plusieurs région et limiter les problème si une panne n'affecte qu'une région du monde.
+
+Nos conteneurs : 
+- Le frontend avec un backend léger (via NextJs)
+- Une API en Golang chargé de gérer les interactions (fine tunning, RAG...) avec l'IA et ses modèles.
+- Une autre API en Golang mais chargé de créer des websockets pour les parcours d'apprentissage (si nécessaire pour des jeux etc.) et les outils de communication (chat etc.).
+- Une ou plusieurs bases de données (chacune avec son conteneur) PostgreSQL pour persister les données issue de l'app frontend et des api (mais on devrait passer via l'app)
+- Un conteneur dédié à Redis pour la performance et mise en cache des flux de données
+- Un conteneur Ollama : un outil permettant d'héberger ses propres modèles d'IA sur son propre serveur en interaction avec le conteneur de l'API Golang. (1)
+
+(1) Nous devons voir si il n'est pas mieux de tout regrouper dans un seul conteneur avec l'api Golang selon l'organisation la meilleure mais aussi si Golang sait aussi directement géré du Ollama (usage plutôt en Python habituellement or Golang a des connecteurs pour les outils de RAG mais pas aussi complet que Python).
+
+Regardez la partie sur les détails pour en savoir plus avec les noms exact des services AWS mobilisé (EC2 etc.) ou les services du VPS pour le MVC. 
+
+---
+
 # Détails par vue (Modèle 4+1)
 
 ## Modèle 4+1 - Vue Logique 
