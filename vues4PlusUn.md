@@ -8,7 +8,7 @@ Management System” (LMS) afin que les écoles personnalisent les espaces d’�
 mesure avec des outils poussés de mémorisation personnalisable par élève, par matière et par
 professeur.
 
-**La version de synthèse :**
+**La version de synthèse :** [Synthèse des vues](#synth%C3%A8se-des-vues)
 
 **Les 4 parties du détail par vue (liens interne au doc) :** 
 
