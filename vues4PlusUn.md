@@ -1,14 +1,5 @@
 # M2 Expert développeur web - Ynov
 
-Les 4 parties (liens interne au doc) : 
-
-- [Vue logique](#mod%C3%A8le-41---vue-logique)
-- [Vue développement](#mod%C3%A8le-41---vue-d%C3%A9veloppement)
-- [Vue processus](#mod%C3%A8le-41---vue-processus)
-- [Vue déploiement](#mod%C3%A8le-41-vue-de-d%C3%A9ploiement)
-
-## Modèle 4+1 - Vue Logique 
-
 Rappel du contexte du projet : 
 L’entreprise fictive serait un fournisseur d’espaces au sein de cette plateforme d’apprentissage qui
 agit comme un SAAS modulable. A l’image de Moodle Cloud qui fournit des espaces de “Learning
@@ -16,6 +7,107 @@ Management System” (LMS) afin que les écoles personnalisent les espaces d’�
 étudiants, nous fournissons des espaces qui permettent de créer des parcours d’apprentissage sur-
 mesure avec des outils poussés de mémorisation personnalisable par élève, par matière et par
 professeur.
+
+**La version de synthèse :**
+
+**Les 4 parties du détail par vue (liens interne au doc) :** 
+
+- [Vue logique](#mod%C3%A8le-41---vue-logique)
+- [Vue développement](#mod%C3%A8le-41---vue-d%C3%A9veloppement)
+- [Vue processus](#mod%C3%A8le-41---vue-processus)
+- [Vue déploiement](#mod%C3%A8le-41-vue-de-d%C3%A9ploiement)
+
+# Synthèse des vues
+
+Avant d'entrer dans le détail et les schémas, voici une version de synthèse débarrassée du jargon trop technique. 
+
+## Vue logique
+
+L'application s'organise en blocs qui regroupent des règles métiers cohérentes entre-elles : 
+1. la gestion utilisateur,
+2. les parcours d'apprentissages,
+3. le travail sur les données issue des IA,
+4. les outils de communication et notification (chat, agenda, emails, visio-conférence....),
+5. le reporting des progrés élèves et de l'app en général (archives, documents, logs, statistiques analytiques matomo etc.),
+6. la facuration et paiement pour profiter de la plateforme. 
+
+Les blocs ont des relations entre-eux : ces relations sont cruciales pour comprendre comment notre application gère les liens entre les règles métiers si elles sont transverses.
+
+**De ces blocs nous avons donc exposé des parcours utilisateurs cohérents:**
+- **Bloc 1 / 2** : Les utilisateurs gèrent leurs parcours d'apprentissages et en retour les parcours retourne un feedback (professeurs et élèves génèrent des parcours ensemble et reçoivent en retour des vues de parcours).
+- **Bloc 2 / 3** : Les IA produisent des données structurées à partir des espaces d'analyse pour l'IA créé dans les parcours (eux-même alimentés par les utilisateurs) et les parcours se servent des retour de l'IA pour s'auto-enrichir (Et communique cela aux utilisateurs qui peuvent aussi enrichir manuellement les parcours).
+- **Bloc 1 / 4** : les utilisateurs selon leur rôle (professeurs, support technique, écoles ou élèves) utilise les outils de communication (chats, emails, visio-conférence, agenda, diagramme de gantt...) afin de jouer leur rôle via une présence plus humaine et un suivi. En retour ces outils leur renvoit un statut, donne des espaces approprié selon les profils, authentifie et protège via un middleware et donne les bonnes vues selon les demandes.
+- **Bloc 1 / 5** : Le reporting sert aux utilisateurs pour, selon leur rôle, avoir des informations qui permettent de mieux jouer ce rôle et avoir une vision moyen et long terme. Par exemple des indications de performance sur les parcours et la progression des elèves aide les professeurs mais le bloc a une acception trés large et il donne aussi des logs technique au support technique.
+- **Bloc 1 / 6** : Les utilisateur selon leur rôle interagissent avec les modules de paiement et abonnements, reçoivent des notifications ou sont redirigés vers les bon espaces pour régler une facture. Cela implique les catégories d'utilisateurs selon leur rôle (les écoles sont les seules à souscrire un plan tarifaire, les professeurs sont enrôlés selon les plans tarifaires choisis et sont notifiés de leur statut et les accés possible selon ce plan tarifaire, etc...)
+
+De cela nous tiront des relations entre les tables d'une base de donnée via un diagramme MCD (ou entre des collections si NoSQL). 
+=> Voir ces relations dans le détail.
+
+## Vue de développement
+
+Cette vue permet de mieux isolé ce que deviendra concrètement le code de l'application. Nous retrouvons le lien avec la vue précèdent et les règles métiers mais ici le tableau suivant donne des class qui, dans le cadre d'une programmation orienté objet, permettent d'articuler via les design pattern issues de la POO et les pattern architecturaux plus globaux les règles métiers entre-elles. Nous organisons le code via des modules maven bien qui ont de faible liens de dépendances entre-eux afin de créer un "monolithe modulaire" donc des modules qui ne doivent pas être tous réécrit si nous ajoutons une fonctionnalité ou devons résoudre un bug. 
+
+Voici ce qui permet à l'app de devenir scalable, évolutive et maintenable : 
+
+| **Module**               | **Classes clés**                                                                |
+| ------------------------ | ------------------------------------------------------------------------------- |
+| **module-users**         | User, StudentProfile, Role, Permission, UserService                             |
+| **module-learning**      | LearningPath, LearningStep, RevisionSession, ContentItem, LearningService       |
+| **module-billing**       | Subscription, Invoice, Payment, SchoolAccount, BillingService                   |
+| **module-reporting**     | Dashboard, PerformanceIndicator, Report, StatisticsAggregator, ReportingService |
+| **module-core**          | BaseEntity, NotificationService, SecurityManager, IAEngine, Utilities           |
+| **module-communication** | Conversation, Message, RendezVous, Visioconference, Notification                |
+
+## Vue des processus
+
+Comment fonctionne réellement l'application à l'exécution ? Cette vue nous montre via différent scénarios, les processus orchestrés lorsque l'application marche en ligne. 
+La plateforme repose sur une architecture orientée services, combinant interactions utilisateur, règles métier, persistance des données et traitements asynchrones.
+
+> Nous avons pris un exemple dont le détail est dans la vue de détail :<br>
+**Création d’un parcours par un professeur et usage du parcours par l'èlève.**
+
+Ici nous exposons juste les étapes (synthèse) pour le scénario mentionné ci-dessus.
+
+1. Création et gestion d’un parcours pédagogique (Professeur)
+- Le professeur initie la création d’un parcours via l’interface utilisateur.
+- Le frontend transmet la demande au LearningService, qui orchestre le processus.
+- Les règles métier sont vérifiées (droits, validité des élèves, conformité à l’abonnement) en s’appuyant sur les services utilisateurs et de facturation.
+- Une fois validé, le parcours et ses étapes sont persistés en base.
+- Le système retourne au frontend les informations clés (ID, statut, élèves associés).
+- Des traitements asynchrones complètent le flux : notifications aux élèves et préparation du contexte IA du parcours.
+**Objectif**: garantir un parcours valide, traçable et prêt à être exploité pédagogiquement.
+
+2. Session de révision d’un élève avec IA
+- L’élève démarre une session de révision depuis une étape du parcours.
+- Le LearningService initialise une session après validation métier (droits, état du parcours, règles de révision).
+- L’interaction principale se fait avec l’Agent IA, qui génère des réponses contextualisées et pédagogiquement filtrées à partir des contenus du parcours.
+- Toutes les interactions sont archivées pour le suivi pédagogique.
+- En fin de session, les résultats (score, temps, progression) sont calculés et enregistrés.
+- Des notifications et mises à jour statistiques sont déclenchées de manière asynchrone.
+**Objectif** : offrir un accompagnement personnalisé tout en assurant un suivi mesurable.
+
+3. Communication professeur ⇄ élève (messagerie et visio)
+- La messagerie permet des échanges temps réel via API/WebSocket.
+- Le CommunicationService vérifie les droits, gère les conversations et persiste les messages.
+- La diffusion se fait en direct si le destinataire est connecté, sinon via notification asynchrone. 
+**Objectif** : faciliter des échanges sécurisés, synchrones ou asynchrones, dans un cadre scolaire.
+
+4. Facturation et administration selon le parcours d'apprentissage (École / Utilisateurs)
+- Un job planifié déclenche mensuellement la génération des factures en fonction du plan et de la consommation lié au parcours généré.
+- Le BillingService applique ou vérifie les règles d’abonnement (modules, utilisateurs, montants).
+**Objectif** : automatiser une facturation fiable, transparente et traçable.
+
+## Vue de déploiement
+
+La **vue de déploiement** représente l'**infrastructure physique** et la **distribution des composants logiciels** sur les différents serveurs. Nous allons utiliser des schémas en markdown pour la décrire avec dans un premier temps une vision de l'application elle-même puis dans un second temps l'infrastructure complète. 
+
+Nous avons décidé de créer l'application en deux étapes : 
+- Une première avec l'usage d'un VPS pour un MVC de l'application pour tester le marché et les retours utilisateurs
+- Une seconde avec un déploiement qui doit tenir la charge via un service AWS de cloud.
+
+# Détails par vue (Modèle 4+1)
+
+## Modèle 4+1 - Vue Logique 
 
 Pour rappels nos blocs logiques sont les suivants :
 - **Bloc 1 - Gestion des utilisateurs** : Inscription, connexion, gestion des profils, rôles et permissions.
@@ -112,7 +204,7 @@ III/ Diagramme de Classes (à venir)
 
 La vue des processus décrit comment les services fonctionnent à l’exécution, indépendamment de l’organisation du code (vue de développement) ou du déploiement (infrastructure).
 
-### Scénario 1 — Création d’un parcours par un professeur
+### Scénario (Exemple) — Création d’un parcours par un professeur
 
 #### Étape 1 — Interaction utilisateur
 > Le professeur ouvre le formulaire de création d’un parcours et saisit : nom du parcours, objectifs pédagogiques, élèves associés, étapes initiales (optionnel).
