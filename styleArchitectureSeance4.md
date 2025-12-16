@@ -67,6 +67,8 @@ Faiblesses :
 
 ### Microservices
 
+Les forces sont celles du SOA avec encore plus de solidité, poussé à l'extrême.
+
 Faiblesses: 
 
 - Overhead trop élevé pour MVP
