@@ -6,5 +6,6 @@ Je rassemble ici les documents et code pour répondre aux exercices d'architectu
 
 ## Séance 3 - Voici les liens et documents : 
 - Lien vers doc des vue du modèle 4+1 (`vues4PlusUn.md`) : <a href="./vues4PlusUn.md">Cliquez ici</a>
-- Lien miro : à venir
 
+## Séance 4 - Lien vers le document : 
+- Lien vers doc de la justification d'architecture (Partie 1 - `styleArchitectureSeance4.md`) : <a href="./styleArchitectureSeance4.md">Cliquez ici</a>
