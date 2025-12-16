@@ -188,32 +188,57 @@ Une image d'architecture hexagonal qui inspire fortement notre choix:
 - Production AWS avec scaling horizontal du monolithe entier puis extraction modules critiques seulement si volumétrie justifie.
 
 ### Multi-tenant simplifié
-Isolation par schéma PostgreSQL ce qui est suffisant pour dune dizaines d'écoles au lancement. Il y aura une migration vers des bases dédiées possible si croissance forte, facilitée par modules indépendants.
+Isolation par schéma PostgreSQL ce qui est suffisant pour dune dizaines d'écoles au lancement. 
+Il y aura une migration vers des bases dédiées possible si croissance forte, facilitée par modules indépendants.
 
 ## Justification technique
 
-Courbe apprentissage acceptable
-Architecture en couches connue de l'équipe (MVC étendu). Ajout modularisation par domaine apporte structure sans révolution conceptuelle. Progression naturelle des compétences.
-Déploiement immédiat fonctionnel
-Conteneur Docker unique, CI/CD simple, logs centralisés. Pas de coordination inter-services, pas de tracing distribué, pas de mesh réseau. Opérationnel en jours, pas semaines.
-Testabilité par couche et module
-Tests unitaires domain isolés sans dépendances. Tests application avec mocks infrastructure. Tests intégration par module. Tests end-to-end sur monolithe complet. Simplicité supérieure à SOA.
-Performance monolithe suffisante
-Appels internes en mémoire, pas latence réseau. Transactions ACID natives PostgreSQL. Cache Redis local. Performances largement suffisantes pour volumétrie initiale (centaines utilisateurs simultanés).
-Scalabilité horizontale immédiate
-AWS Auto Scaling Group scale le monolithe complet. Load Balancer distribue charge. Sessions Redis partagé. Acceptable jusqu'à milliers d'utilisateurs actifs. Extraction WebSocket si nécessaire (stateful).
-Stack technique homogène
-Golang monolithe + PostgreSQL + Redis + Next.js frontend. Pas coordination polyglotte. Pas gestion versions multiples. Compétences focalisées.
-Migration progressive vers distribution
-Phase 1 (MVP 0-6 mois) : Monolithe complet
-Phase 2 (Production 6-12 mois) : Extraction ai-module (GPU) et communication-module (WebSocket)
-Phase 3 (Scale 12-24 mois) : Extraction autres modules si volumétrie dépasse 50k utilisateurs
-Interfaces préparées pour extraction :
+### Courbe apprentissage acceptable
+Architecture en couches connue de l'équipe (MVC étendu). 
+Ajout modularisation par domaine apporte structure sans révolution conceptuelle. 
+Progression naturelle des compétences.
 
-Chaque module expose interfaces explicites
-Communication interne via abstraction (in-process puis REST)
-Base schémas séparés facilitant split futur
-Configuration par module permet externalisation
+### Déploiement immédiat fonctionnel
+Conteneur Docker unique, CI/CD simple, logs centralisés. 
+Pas de coordination inter-services, pas de tracing distribué, pas de mesh réseau. 
+Opérationnel en jours, pas semaines.
+
+### Testabilité par couche et module
+Tests unitaires domain isolés sans dépendances. 
+Tests application avec mocks infrastructure. 
+Tests intégration par module. 
+Tests end-to-end sur monolithe complet. 
+Simplicité supérieure à SOA.
+
+### Performance monolithe suffisante
+- Appels internes en mémoire, pas latence réseau. 
+- Transactions ACID natives PostgreSQL. 
+- Cache Redis local. 
+- Performances largement suffisantes pour volumétrie initiale (centaines utilisateurs simultanés).
+
+### Scalabilité horizontale immédiate
+- AWS Auto Scaling Group scale le monolithe complet. 
+- Load Balancer distribue charge. 
+- Sessions Redis partagé. 
+- Acceptable jusqu'à milliers d'utilisateurs actifs. 
+- Extraction WebSocket si nécessaire (stateful).
+
+### Stack technique homogène
+- Golang monolithe + PostgreSQL + Redis + Next.js frontend. 
+- Pas coordination polyglotte (dans un premier temps). 
+- Pas gestion versions multiples. Compétences focalisées.
+
+### Migration progressive vers distribution (phase théoriques)
+- Phase 1 (MVP 0-6 mois) : Monolithe complet
+- Phase 2 (Production 6-12 mois) : Extraction ai-module (GPU) et communication-module (WebSocket)
+- Phase 3 (Scale 12-24 mois) : Extraction autres modules si volumétrie dépasse 50k utilisateurs
+
+### Interfaces préparées pour extraction :
+
+- Chaque module expose interfaces explicites
+- Communication interne via abstraction (in-process puis REST)
+- Base schémas séparés facilitant split futur
+- Configuration par module permet externalisation
 
 ## Limites et évolutions possibles
 
