@@ -327,3 +327,73 @@ Infrastructure → Domain ← Application
 
 Cette architecture permet de changer l'implémentation technique (InMemory, JPA, MongoDB, etc.) sans modifier le domaine ni les services métier.
 
+## Vérification via un test (Workflow)
+
+Le test `testAssignDraftPath_ShouldThrowBusinessRuleException` démontre le découplage métier/stockage en validant la règle métier critique :<br> **un parcours DRAFT ne peut pas être assigné à un élève**.
+
+### Résultat du test (screenshots): 
+<br>
+<img src='./test.png' alt="" height=500 width=500 />
+<br>
+
+### Explication du Workflow du test
+
+**Étape 1 - Initialisation (méthode setUp) :**
+
+Avant chaque test, JUnit exécute la méthode `setUp()` qui :
+- Crée une instance de `InMemoryLearningPathRepository` (implémentation technique)
+- Crée une instance de `InMemoryPathAssignmentRepository` (implémentation technique)
+- Instancie `PathAssignmentService` en injectant les deux repositories via le constructeur
+
+Le service reçoit les repositories comme interfaces (`LearningPathRepository` et `PathAssignmentRepository`), pas comme implémentations concrètes. Il ignore qu'il s'agit d'implémentations InMemory.
+
+**Étape 2 - Préparation des données (Given) :**
+
+Le test crée les données nécessaires :
+- Génère des UUID pour teacherId, studentId et pathId
+- Crée un objet `LearningPath` avec status DRAFT
+- Sauvegarde le parcours via `learningPathRepository.savePath(draftPath)`
+
+À ce stade, le parcours est stocké dans la Map interne de `InMemoryLearningPathRepository`. Le service métier n'a pas encore été sollicité.
+
+**Étape 3 - Exécution de la règle métier (When) :**
+
+Le test appelle `pathAssignmentService.assignPathToStudent(pathId, studentId)`. Le workflow interne du service est le suivant :
+
+1. Le service appelle `learningPathRepository.findPathById(pathId)` pour récupérer le parcours
+   - Le service utilise uniquement l'interface `LearningPathRepository`
+   - L'implémentation InMemory retourne le parcours depuis sa Map interne
+   - Le service ne sait pas que c'est une Map en mémoire
+
+2. Le service vérifie que le parcours existe
+   - Si null, lève une `BusinessRuleException`
+
+3. Le service valide la règle métier : vérifie que `path.getStatus() == PathStatus.VALIDATED`
+   - Le parcours a le status DRAFT, donc la condition échoue
+   - Le service lève une `BusinessRuleException` avec un message explicite
+
+4. Le service n'appelle jamais `pathAssignmentRepository.assignPathToStudent()` car la règle métier a été violée
+
+**Étape 4 - Vérification des résultats (Then) :**
+
+Le test vérifie que :
+- Une `BusinessRuleException` a bien été levée (via `assertThrows`)
+- Le message d'erreur contient des termes liés à la validation ("non validé", "validé", "VALIDATED")
+- Aucune assignation n'a été créée : `pathAssignmentRepository.findAssignmentsByStudent(studentId)` retourne une liste vide
+
+**Preuve du découplage :**
+
+Ce test s'exécute sans :
+- Base de données démarrée
+- Configuration datasource
+- ORM initialisé
+- Serveur applicatif
+- Fichiers de configuration
+
+Seuls les objets métier et les repositories InMemory sont utilisés. Le service métier fonctionne exactement de la même manière qu'avec une implémentation JPA ou MongoDB, car il ne dépend que des interfaces du domaine.
+
+**Résultat du test :**
+
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+
+Le test valide que la règle métier est correctement appliquée et que le découplage entre le domaine/application et l'infrastructure est effectif.
