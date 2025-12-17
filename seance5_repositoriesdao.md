@@ -1,5 +1,16 @@
 # Livrable Séance 5 - Repositories/DAO
 
+## Sommaire
+
+1. [Consignes (rappel)](#consignes-rappel)
+2. [Contexte (rappel)](#contexte-rappel)
+3. [Exemples d'interfaces DAO et/ou Repository](#exemples-dinterfaces-dao-etou-repository)
+4. [Simulation - Exemple de InMemory](#simulation---exemple-de-inmemory)
+5. [Arborescence du module learning-module](#arborescence-du-module-learning-module)
+6. [Exemple d'un service métier](#exemple-dun-service-métier)
+7. [Séparation des couches et inversion de dépendance](#séparation-des-couches-et-inversion-de-dépendance)
+8. [Vérification via un test (Workflow)](#vérification-via-un-test-workflow)
+
 ## Consignes (rappel)
 
 ### À la fin du livrable, on doit retrouver dans le projet :
@@ -333,7 +344,7 @@ Le test `testAssignDraftPath_ShouldThrowBusinessRuleException` démontre le déc
 
 ### Résultat du test (screenshots): 
 <br>
-<img src='./test.png' alt="" height=500 width=500 />
+<img src='./test.png' alt="" height=1000 width=1000 />
 <br>
 
 ### Explication du Workflow du test
