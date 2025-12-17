@@ -1,0 +1,9 @@
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/domain/model/PathStatus.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/domain/model/PathAssignment.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/infrastructure/repository/InMemoryPathAssignmentRepository.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/domain/model/LearningPath.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/domain/repository/PathAssignmentRepository.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/domain/repository/LearningPathRepository.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/domain/exception/BusinessRuleException.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/application/service/PathAssignmentService.java
+/home/amaury/Desktop/ArchitectureLogicielle_ynov/Architecture_logicielle_ynov_docs/learning-platform/learning-module/src/main/java/com/learningplatform/learning/infrastructure/repository/InMemoryLearningPathRepository.java
