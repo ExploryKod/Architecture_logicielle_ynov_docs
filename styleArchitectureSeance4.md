@@ -1,5 +1,13 @@
 # Choix du style d'architecture de l'application 
 
+Ci-aprés la réponse à la partie 1 de la séance 4.
+
+La partie 2 de la séance 4 se trouve dans un autre fichier : 
+- La réflexion sur l'architecture maven : `seance4maven.md` [cliquez ici](./seance4maven.md)
+- Le dossier de code avec les pom.xml : [learning-platform](./learning-platform)
+
+**Partie 1 de la séance 4 :**
+
 ## Contexte du projet (Rappel)
 
 Plateforme SaaS éducative permettant aux écoles de créer des parcours d'apprentissage personnalisés avec agents IA supervisés par des professeurs.
