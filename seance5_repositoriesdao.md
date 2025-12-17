@@ -170,3 +170,160 @@ public interface PathAssignmentRepository {
     List<PathAssignment> findAssignmentsByPath(UUID pathId);
 }
 ```
+
+## Simulation - Exemple de InMemory 
+
+Ce sont des objet qui serve à simuler une base de donnée en donnant une donnée structuré de la même manière que si il y avait une base de donnée. C'est utile pour tester l'implémentation. 
+
+Ces InMemory sont dans l'infrastructure et dépendent du domaine (ce dernier ne dépend pas d'eux). Ils doivent passer via les interfaces du domaine pour produire une implémentation sans quoi ils ne "prennent pas vie". Ils ne peuvent donc pas par eux-même créer des règles métiers mais se content de les implémenter sur le plan  technique.
+
+### Implémentation `InMemoryLearningPathRepository`
+
+Cette classe implémente l'interface `LearningPathRepository` et fournit un stockage en mémoire des parcours d'apprentissage.
+
+**Structure interne :**
+
+- Map<UUID, LearningPath> storage : structure de stockage utilisant une HashMap avec UUID comme clé et LearningPath comme valeur
+
+**Méthodes implémentées :**
+
+- savePath(LearningPath path) : si le pathId est null, génère un nouvel UUID et crée un nouveau LearningPath avec cet identifiant, sinon met à jour le parcours existant dans la Map
+- findPathById(UUID pathId) : retourne le parcours correspondant à l'UUID ou null si absent
+- findValidatedPaths() : filtre les parcours stockés pour retourner uniquement ceux dont le status est VALIDATED
+- findDraftsByTeacher(UUID teacherId) : filtre les parcours par teacherId et status DRAFT
+- archivePath(UUID pathId) : récupère le parcours, modifie son status à ARCHIVED et le sauvegarde dans la Map
+
+Aucune dépendance à une base de données, ORM ou configuration externe. Le stockage est temporaire et perdu à la fin de l'exécution.
+
+### Implémentation `InMemoryPathAssignmentRepository`
+
+Cette classe implémente l'interface `PathAssignmentRepository` et fournit un stockage en mémoire des assignations de parcours aux élèves.
+
+**Structure interne :**
+
+- Map<UUID, PathAssignment> storage : structure de stockage utilisant une HashMap avec UUID comme clé et PathAssignment comme valeur
+
+**Méthodes implémentées :**
+
+- assignPathToStudent(UUID pathId, UUID studentId) : génère un nouvel UUID pour l'assignation, crée une PathAssignment avec pathId, studentId et la date courante (LocalDateTime.now()), puis la stocke dans la Map
+- findAssignmentsByStudent(UUID studentId) : filtre les assignations stockées pour retourner uniquement celles correspondant au studentId fourni
+- findAssignmentsByPath(UUID pathId) : filtre les assignations stockées pour retourner uniquement celles correspondant au pathId fourni
+
+Aucune dépendance à une base de données, ORM ou configuration externe. Le stockage est temporaire et perdu à la fin de l'exécution.
+
+## Arborescence du module learning-module
+
+L'arborescence suivante montre l'organisation du code du module learning-module avec la séparation claire des couches et l'inversion de dépendance.
+
+```
+learning-module/
+├── pom.xml
+└── src/
+    ├── main/
+    │   └── java/
+    │       └── com/
+    │           └── learningplatform/
+    │               └── learning/
+    │                   ├── domain/                          (COUCHE DOMAINE - Ne dépend de rien)
+    │                   │   ├── exception/
+    │                   │   │   └── BusinessRuleException.java
+    │                   │   ├── model/                        (Entités métier)
+    │                   │   │   ├── LearningPath.java
+    │                   │   │   ├── PathAssignment.java
+    │                   │   │   └── PathStatus.java
+    │                   │   └── repository/                   (Interfaces Repository - Contrats)
+    │                   │       ├── LearningPathRepository.java
+    │                   │       └── PathAssignmentRepository.java
+    │                   │
+    │                   ├── application/                      (COUCHE APPLICATION - Dépend du domaine)
+    │                   │   └── service/
+    │                   │       └── PathAssignmentService.java
+    │                   │
+    │                   └── infrastructure/                   (COUCHE INFRASTRUCTURE - Dépend du domaine)
+    │                       └── repository/
+    │                           ├── InMemoryLearningPathRepository.java
+    │                           └── InMemoryPathAssignmentRepository.java
+    │
+    └── test/
+        └── java/
+            └── com/
+                └── learningplatform/
+                    └── learning/
+                        └── PathAssignmentServiceTest.java
+```
+
+## Exemple d'un service métier
+
+Le service métier `PathAssignmentService` illustre l'utilisation exclusive des contrats (interfaces Repository) et des règles métier, sans connaissance des détails d'implémentation.
+
+### Service PathAssignmentService
+
+Le service `PathAssignmentService` ne doit connaître que :
+- les règles métier
+- l'interface `LearningPathRepository`
+- l'interface `PathAssignmentRepository`
+
+Il ne doit pas connaître :
+- SQL
+- ORM
+- InMemory
+- les détails de stockage
+
+### Règle métier implémentée
+
+"Un parcours ne peut pas être assigné à un élève s'il n'est pas validé."
+
+### Implémentation du service
+
+Le service `assignPathToStudent(UUID pathId, UUID studentId)` :
+
+1. récupère le parcours via `learningPathRepository.findPathById(pathId)`
+2. valide que le parcours existe (sinon lève une BusinessRuleException)
+3. valide la règle métier : vérifie que le status du parcours est VALIDATED (sinon lève une BusinessRuleException)
+4. crée l'assignation via `pathAssignmentRepository.assignPathToStudent(pathId, studentId)`
+
+Le service utilise uniquement les méthodes définies dans les interfaces Repository. Il ignore complètement si le stockage est en mémoire (InMemory), en base de données (JPA), ou dans un autre système. Cette abstraction permet de changer l'implémentation technique sans modifier le service métier.
+
+## Séparation des couches et inversion de dépendance
+
+**Couche Domain (domaine) :**
+- Contient les entités métier (LearningPath, PathAssignment, PathStatus)
+- Contient les interfaces Repository (LearningPathRepository, PathAssignmentRepository)
+- Contient les exceptions métier (BusinessRuleException)
+- Ne dépend d'aucune autre couche
+- Représente le cœur métier stable et indépendant
+
+**Couche Application (application) :**
+- Contient les services métier (PathAssignmentService)
+- Dépend uniquement du domaine via les interfaces Repository
+- Utilise les abstractions du domaine, pas les implémentations concrètes
+- Orchestre les règles métier en utilisant les repositories
+
+**Couche Infrastructure (infrastructure) :**
+- Contient les implémentations concrètes des repositories (InMemoryLearningPathRepository, InMemoryPathAssignmentRepository)
+- Dépend du domaine car elle implémente les interfaces définies dans le domaine
+- Le domaine ne dépend pas de l'infrastructure, c'est l'inversion de dépendance
+- Peut être remplacée sans modifier le domaine ou l'application (exemple : remplacer InMemory par JPA, MongoDB, etc.)
+
+**Couche Test :**
+- Contient les tests unitaires (PathAssignmentServiceTest)
+- Utilise les implémentations InMemory pour tester sans infrastructure externe
+- Démontre le découplage : les tests fonctionnent sans base de données ni ORM
+
+### Flux de dépendance
+
+Le flux de dépendance suit le principe d'inversion de dépendance :
+
+```
+Infrastructure → Domain ← Application
+     ↓              ↑
+     └──────────────┘
+```
+
+- Domain est indépendant (ne dépend de rien)
+- Application dépend de Domain (via les interfaces)
+- Infrastructure dépend de Domain (implémente les interfaces)
+- Domain ne dépend jamais d'Infrastructure
+
+Cette architecture permet de changer l'implémentation technique (InMemory, JPA, MongoDB, etc.) sans modifier le domaine ni les services métier.
+
