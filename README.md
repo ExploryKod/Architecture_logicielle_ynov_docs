@@ -9,3 +9,5 @@ Je rassemble ici les documents et code pour répondre aux exercices d'architectu
 
 ## Séance 4 - Lien vers le document : 
 - Lien vers doc de la justification d'architecture (Partie 1 - `styleArchitectureSeance4.md`) : <a href="./styleArchitectureSeance4.md">Cliquez ici</a>
+- Lien vers l'exercice sur Maven `seance4maven.md` : <a href='./seance4maven.md'>Cliquez ici</a>
+- Le dossier maven (code avec pom.xml) : dossier `learning-platform` (ici à la racine).

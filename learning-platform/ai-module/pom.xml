@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.learningplatform</groupId>
+        <artifactId>learning-platform-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>ai-module</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Learning Platform - AI Module</name>
+    <description>Agents conversationnels, RAG, génération contenu</description>
+
+    <dependencies>
+        <!-- Dépendance vers core -->
+        <dependency>
+            <groupId>com.learningplatform</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+
+        <!-- Dépendance vers learning-module (pour accéder aux parcours) -->
+        <dependency>
+            <groupId>com.learningplatform</groupId>
+            <artifactId>learning-module</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
