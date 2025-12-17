@@ -79,3 +79,71 @@ Représente l'assignation d'un parcours à un élève.
 ***Règle métier :***
 
 Une assignation ne peut être créée que si le parcours (LearningPath) est VALIDATED
+
+### Entité `Student`
+Représente un élève, incluant ses préférences et son historique d'apprentissage.
+
+**Attributs :** (Avec typage)
+- studentId (référence à l'élève) : UUID (PKey)
+- profileId (identifiant unique) : UUID (Foreign Key vers StudentProfile)
+- name (nom de l'élève) : String
+- email (email de l'élève) : String
+- learningPreferences (préférences d'apprentissage) : Map<String, String>
+- completedPaths (parcours complétés) : List<UUID>
+- studentAssignedPaths (parcours assignés) : List<UUID>
+
+***Règle métier :***
+Le profil doit être consulté pour personnaliser les parcours d'apprentissage.
+
+### Entité `Teacher`
+Représente un professeur qui crée et valide des parcours d'apprentissage.
+
+**Attributs :** (Avec typage)
+- teacherId (identifiant unique) : UUID (PK)
+- name (nom du professeur) : String
+- email (email du professeur) : String
+- professorAssignedPaths (parcours supervisé par le professeur) : List<UUID>
+- professorStudentList (liste des UUID des élèves) : List<UUID>
+
+***Règle métier :***
+Un professeur doit être authentifié pour créer ou valider des parcours.
+Un professeur doit être authentifié pour ajouter des élèves.
+Un professeur peut superviser plusieurs élèves.
+
+Ces entités appartiennent au domaine, ils sont trés trés stable. Certains vont appartenir au core (car transverse comme Teacher ou Student) et d'autres au module-learning seulement. 
+
+### Interfaces : Repository.
+
+Dans notre cas, nos n'implémentons pas de DAO. A ce stade de notre projet nous n'en avons pas besoin car nous n'allons pas dans une analyse trés Macro. 
+
+Les Repository appartiennent strictement au domaine et permettent d'abstraire l'accès aux données. Il exprime des règles métier même si les termes peuvent être simple comme "save". Ils ne dépendent pas d'un ORM, ne dépendent pas d'une base de données, d'une technologie ou autre infrastructure.
+
+Ils sont donc appellé par nos services métiers qui ne connaissant pas l'implémentation concrète. L'infrastructure fourni une implémentation technique de ces interfaces mais elle pourrait changer sans que les interfaces ne doivent elles changer. Les services n'ont pas non plus besoin de changer si l'implémentation technique change. C'est tout l'intérêt de cette couche d'abstraction qui permet l'inversion de dépendance entre infrastructure et domaine. Le domaine ne dépend pas de l'infrastructure mais l'infrastructure dépend du domaine.
+
+#### Interface `LearningPathRepository`
+Responsable de la gestion des parcours d'apprentissage.
+
+**Méthodes orientées métier :**
+
+- savePath(LearningPath path) - sauvegarde un parcours métier
+- findPathById(String pathId) - récupère un parcours métier
+- findValidatedPaths() - liste les parcours prêts pour assignation
+- findDraftsByTeacher(String teacherId) - trouve parcours en construction d'un professeur (brouillon)
+- archivePath(String pathId) - archive un parcours 
+
+Retourne des objets métier purs (LearningPath du domaine).
+Le nom des méthodes reflète l'intention métier, pas l'opération technique.
+
+Exemple en Java :
+
+Pour la lisibilité nous utilisons un exemple en Java mais cela peut s'écrire dans n'importe quel langage orienté objet.
+
+```java
+public interface LearningPathRepository {
+    void savePath(LearningPath path);
+    LearningPath findById(String pathId);
+    List<LearningPath> findValidatedPaths();
+    List<LearningPath> findDraftsByTeacher(String teacherId);
+    void archivePath(String pathId);
+}
+```
