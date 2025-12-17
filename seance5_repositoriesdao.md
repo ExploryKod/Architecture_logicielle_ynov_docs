@@ -80,6 +80,8 @@ Représente l'assignation d'un parcours à un élève.
 
 Une assignation ne peut être créée que si le parcours (LearningPath) est VALIDATED
 
+Pour information, voici les autres entités métiers impliquées dans ces opérations :
+
 ### Entité `Student`
 Représente un élève, incluant ses préférences et son historique d'apprentissage.
 
@@ -112,6 +114,8 @@ Un professeur peut superviser plusieurs élèves.
 
 Ces entités appartiennent au domaine, ils sont trés trés stable. Certains vont appartenir au core (car transverse comme Teacher ou Student) et d'autres au module-learning seulement. 
 
+Si besoin nous pourrons utiliser des **DTOs** (Data Transfer Object) pour transporter les données entre les couches sans dépendre d'une entité de base mais ici nous nous concentrons sur le sujet Repository vs DAO.
+
 ### Interfaces : Repository.
 
 Dans notre cas, nos n'implémentons pas de DAO. A ce stade de notre projet nous n'en avons pas besoin car nous n'allons pas dans une analyse trés Macro. 
@@ -126,15 +130,15 @@ Responsable de la gestion des parcours d'apprentissage.
 **Méthodes orientées métier :**
 
 - savePath(LearningPath path) - sauvegarde un parcours métier
-- findPathById(String pathId) - récupère un parcours métier
+- findPathById(UUID pathId) - récupère un parcours métier
 - findValidatedPaths() - liste les parcours prêts pour assignation
-- findDraftsByTeacher(String teacherId) - trouve parcours en construction d'un professeur (brouillon)
-- archivePath(String pathId) - archive un parcours 
+- findDraftsByTeacher(UUID teacherId) - trouve parcours en construction d'un professeur (brouillon)
+- archivePath(UUID pathId) - archive un parcours 
 
 Retourne des objets métier purs (LearningPath du domaine).
 Le nom des méthodes reflète l'intention métier, pas l'opération technique.
 
-Exemple en Java :
+**Exemple en Java :**
 
 Pour la lisibilité nous utilisons un exemple en Java mais cela peut s'écrire dans n'importe quel langage orienté objet.
 
@@ -143,7 +147,26 @@ public interface LearningPathRepository {
     void savePath(LearningPath path);
     LearningPath findById(String pathId);
     List<LearningPath> findValidatedPaths();
-    List<LearningPath> findDraftsByTeacher(String teacherId);
-    void archivePath(String pathId);
+    List<LearningPath> findDraftsByTeacher(UUID teacherId);
+    void archivePath(UUID pathId);
+}
+```
+
+#### Interface `PathAssignmentRepository`
+
+Responsable de la gestion des assignations de parcours aux élèves.
+
+**Méthodes orientées métier :**
+- assignPathToStudent(UUID pathId, UUID studentId) - assigne un parcours à un élève
+- findAssignmentsByStudent(UUID studentId) - liste les parcours assignés à un élève
+- findAssignmentsByPath(UUID pathId) - liste les élèves assignés à un parcours
+
+**Exemple en Java :**
+
+```java
+public interface PathAssignmentRepository {
+    void assignPathToStudent(UUID pathId, UUID studentId);
+    List<PathAssignment> findAssignmentsByStudent(UUID studentId);
+    List<PathAssignment> findAssignmentsByPath(UUID pathId);
 }
 ```
