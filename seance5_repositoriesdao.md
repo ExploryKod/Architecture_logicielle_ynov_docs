@@ -2,7 +2,7 @@
 
 ## Consignes (rappel)
 
-### À la fin du livrable, on doit retrouver dans ton projet :
+### À la fin du livrable, on doit retrouver dans le projet :
 1.​ Une ou plusieurs interfaces (DAO et/ou Repository) représentant le contrat
 d’accès aux données.
 2.​ Une implémentation simulée de ce contrat (InMemory / Fake / Stub).
