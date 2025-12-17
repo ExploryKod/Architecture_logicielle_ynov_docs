@@ -259,7 +259,7 @@ Simplicité supérieure à SOA.
 - Couplage résiduel possible. Une mauvaise discipline de développement peut créer des dépendances cachées entre modules, compliquant l'extraction future.
 - Base unique qui limite la volumétrie. PostgreSQL en base unique devient un goulot si des dizaines de milliers d'écoles venaient à devoir être testés en même temps. 
 
-### Stratégies atténuation
+### Stratégies d'atténuation des limites:
 - Discipline de modularisation stricte. 
 - Revues de code focalisées sur l'isolation en modules. 
 - Tests de dépendances automatisés. 
