@@ -14,3 +14,6 @@ Je rassemble ici les documents et code pour répondre aux exercices d'architectu
 
 ## Séance 5 DAO / Repository - Lien vers le document : 
 - Lien vers le livrable de la séance 5 (`seance5_repositoriesdao.md`) : <a href="./seance5_repositoriesdao.md">Cliquez ici</a>
+
+## Séance 6 Factory - Lien vers le document : 
+- Lien vers le livrable de la séance 5 (`seance6_factory.md`) : <a href="./seance6_factory.md">Cliquez ici</a>
