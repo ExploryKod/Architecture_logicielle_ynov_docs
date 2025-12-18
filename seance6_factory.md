@@ -31,7 +31,20 @@ Le projet est une plateforme d'apprentissage SAAS modulable organisée en archit
 
 ### Concept
 
-La Factory globale `RepositoryFactory` centralise la création de toutes les instances de repositories techniques. Elle est accessible via un Singleton garantissant un point d'accès unique à travers l'application.
+La Factory globale `RepositoryFactory` constitue le point d'instanciation centralisé et lisible pour tous les objets techniques. Tous les `new` des repositories techniques sont regroupés dans cette Factory unique, accessible via un Singleton garantissant un point d'accès unique à travers l'application.
+
+### Choix d'une Factory globale plutôt que des factories par domaine
+
+**Choix retenu** : Une seule Factory globale (`RepositoryFactory`) plutôt que des factories par domaine (LearningFactory, UserFactory, BillingFactory, etc.).
+
+**Justification** :
+- Simplicité : à ce stade du projet, une Factory globale est la solution la plus simple et la plus cohérente
+- Centralisation : tous les `new` des objets techniques sont regroupés dans un seul endroit, facilement identifiable et modifiable
+- Lisibilité : le point d'instanciation est unique et évident, sans dispersion dans plusieurs factories
+- Cohérence : les règles de création des repositories techniques sont uniformes (tous InMemory actuellement, tous JPA demain)
+- Pas de complexité inutile : créer des factories par domaine nécessiterait une justification claire (ex : règles de création très différentes par domaine), ce qui n'est pas le cas ici
+
+**Cas où des factories par domaine seraient justifiées** : Si chaque domaine avait des règles de création très spécifiques (ex : LearningFactory nécessite un cache distribué, BillingFactory nécessite une connexion sécurisée spécifique), alors des factories séparées seraient justifiées. Ce n'est pas le cas ici où tous les repositories suivent le même pattern de création.
 
 ### Responsabilités
 
@@ -40,6 +53,8 @@ La Factory crée exclusivement des objets techniques :
 - Futures implémentations techniques (JPALearningPathRepository, MongoDBLearningPathRepository, etc.)
 
 La Factory ne crée jamais d'objets métier (LearningPath, PathAssignment, Student, Teacher). Ces entités métier sont créées par le domaine lui-même selon ses règles métier.
+
+**Point d'instanciation centralisé** : Tous les `new` des repositories techniques sont regroupés dans cette Factory. Aucun `new` de repository technique ne doit apparaître ailleurs dans le code (tests, application, infrastructure).
 
 ### Structure conceptuelle
 
@@ -181,14 +196,16 @@ Le métier (`PathAssignmentService`) et les tests restent inchangés car ils dé
 
 ### Factory
 
-**Choix retenu** : Factory pour centraliser la création des repositories techniques.
+**Choix retenu** : Factory globale pour centraliser la création des repositories techniques.
 
 **Justification** :
-- Point unique de création : tous les repositories techniques sont créés au même endroit
+- Point d'instanciation centralisé et lisible : tous les `new` des repositories techniques sont regroupés dans un seul endroit, facilement identifiable
+- Point unique de création : tous les repositories techniques sont créés au même endroit, évitant la dispersion des `new` dans le code
 - Découplage métier/création : le métier ne connaît plus les classes concrètes (InMemory*, JPA*)
-- Facilité d'évolution : changement d'implémentation technique isolé dans la Factory
+- Facilité d'évolution : changement d'implémentation technique isolé dans la Factory, tous les `new` sont modifiés au même endroit
 - Respect de l'inversion de dépendance : le métier dépend des interfaces, la Factory crée les implémentations
 - Cohérence avec l'architecture hexagonale : la Factory appartient à l'infrastructure et crée les adapters techniques
+- Simplicité : une Factory globale est la solution la plus simple et la plus cohérente à ce stade, sans complexité inutile
 
 **Anti-pattern évité** : Factory qui crée du métier. La Factory crée uniquement des objets techniques (repositories), jamais des entités métier (LearningPath, PathAssignment). Les entités métier sont créées par le domaine selon ses règles métier.
 
@@ -223,14 +240,16 @@ Le métier (`PathAssignmentService`) et les tests restent inchangés car ils dé
 ### Découplage renforcé
 
 **Avant** :
-- Le métier recevait ses dépendances mais leur création était dispersée dans les tests et l'application
-- Un changement technique (InMemory à JPA) nécessitait de modifier tous les points de création
+- Les `new` des repositories étaient dispersés dans les tests et l'application
+- Le métier recevait ses dépendances mais leur création était dispersée
+- Un changement technique (InMemory à JPA) nécessitait de modifier tous les points de création (tous les `new`)
 - Le couplage avec les classes concrètes (InMemory*) était présent dans les tests
 
 **Après** :
+- Tous les `new` des repositories techniques sont centralisés dans la Factory globale
+- Le point d'instanciation est unique, centralisé et lisible
 - Le métier reçoit ses dépendances sans connaître leur création
-- Un changement technique ne nécessite qu'une modification dans la Factory
-- Le point d'instanciation est unique et identifié
+- Un changement technique ne nécessite qu'une modification dans la Factory (tous les `new` sont au même endroit)
 - Les tests et l'application ne connaissent plus les classes concrètes, seulement la Factory
 
 ### Respect des principes SOLID
