@@ -23,6 +23,19 @@ Attention : la factory ou le singleton ne doit pas créé du métier.
 
 Ce livrable présente l'introduction d'une Factory globale associée au pattern Singleton pour centraliser la création des objets techniques (repositories) dans le contexte du module learning-module. L'objectif est de découpler le métier de la création de ses dépendances techniques, garantissant un point d'instanciation unique et facilitant l'évolution des implémentations (InMemory à JPA, MongoDB, etc.).
 
+### Synthèse des choix architecturaux
+
+**Factory** : Retenue sous forme d'une Factory globale (`RepositoryFactory`) pour centraliser tous les `new` des repositories techniques. Choix justifié par la simplicité, la centralisation et l'uniformité des règles de création à ce stade du projet.
+
+**Singleton** : Retenu pour garantir un point d'accès unique à la Factory. Périmètre limité à l'encapsulation de la Factory uniquement. Limites identifiées : état partagé entre tests, remplaçable par injection de dépendance en production.
+
+**Builder** : Volontairement non retenu. Justification : complexité inutile pour des repositories sans configuration complexe. La création directe via `new` est suffisante et lisible dans ce contexte.
+
+**Objectifs pédagogiques atteints** :
+- Structuration de l'instanciation : tous les `new` centralisés dans la Factory
+- Découplage métier/technique : le métier ne connaît plus les classes concrètes
+- Justification claire : chaque choix est argumenté et relié aux besoins du projet
+
 ## Contexte du projet
 
 Le projet est une plateforme d'apprentissage SAAS modulable organisée en architecture hexagonale avec séparation des couches Domain, Application et Infrastructure. Le module learning-module utilise actuellement des repositories InMemory créés directement dans les tests (voir `PathAssignmentServiceTest`). La Factory permettra de centraliser cette création et de faciliter l'évolution vers d'autres implémentations techniques.
@@ -37,14 +50,23 @@ La Factory globale `RepositoryFactory` constitue le point d'instanciation centra
 
 **Choix retenu** : Une seule Factory globale (`RepositoryFactory`) plutôt que des factories par domaine (LearningFactory, UserFactory, BillingFactory, etc.).
 
-**Justification** :
-- Simplicité : à ce stade du projet, une Factory globale est la solution la plus simple et la plus cohérente
-- Centralisation : tous les `new` des objets techniques sont regroupés dans un seul endroit, facilement identifiable et modifiable
-- Lisibilité : le point d'instanciation est unique et évident, sans dispersion dans plusieurs factories
-- Cohérence : les règles de création des repositories techniques sont uniformes (tous InMemory actuellement, tous JPA demain)
-- Pas de complexité inutile : créer des factories par domaine nécessiterait une justification claire (ex : règles de création très différentes par domaine), ce qui n'est pas le cas ici
+**Justification détaillée** :
 
-**Cas où des factories par domaine seraient justifiées** : Si chaque domaine avait des règles de création très spécifiques (ex : LearningFactory nécessite un cache distribué, BillingFactory nécessite une connexion sécurisée spécifique), alors des factories séparées seraient justifiées. Ce n'est pas le cas ici où tous les repositories suivent le même pattern de création.
+**Raisons principales** :
+1. **Simplicité** : À ce stade du projet, une Factory globale est la solution la plus simple et la plus cohérente. Pas de complexité inutile.
+2. **Centralisation maximale** : Tous les `new` des objets techniques sont regroupés dans un seul endroit, facilement identifiable et modifiable. Un seul fichier à consulter pour comprendre comment les repositories sont créés.
+3. **Lisibilité** : Le point d'instanciation est unique et évident, sans dispersion dans plusieurs factories. Un développeur sait immédiatement où chercher.
+4. **Cohérence des règles** : Les règles de création des repositories techniques sont uniformes (tous InMemory actuellement, tous JPA demain). Pas de variation par domaine.
+5. **Pas de justification pour la séparation** : Créer des factories par domaine nécessiterait une justification claire (ex : règles de création très différentes par domaine), ce qui n'est pas le cas ici.
+
+**Cas où des factories par domaine seraient justifiées** :
+- Si chaque domaine avait des règles de création très spécifiques et différentes (ex : LearningFactory nécessite un cache distribué, BillingFactory nécessite une connexion sécurisée spécifique avec certificats)
+- Si les dépendances techniques variaient significativement par domaine (ex : Learning utilise MongoDB, Billing utilise PostgreSQL avec des règles de connexion différentes)
+- Si la complexité de création justifiait la séparation (ex : LearningFactory avec 10 paramètres de configuration, BillingFactory avec 5 autres paramètres)
+
+**Dans notre contexte** : Tous les repositories suivent le même pattern de création simple (`new InMemoryXxxRepository()`). Aucune raison de séparer.
+
+**Décision** : Factory globale retenue car elle répond aux objectifs pédagogiques (centralisation, simplicité, lisibilité) sans complexité inutile.
 
 ### Responsabilités
 
@@ -214,26 +236,64 @@ Le métier (`PathAssignmentService`) et les tests restent inchangés car ils dé
 **Choix retenu** : Singleton pour garantir un point d'accès unique à la Factory.
 
 **Justification** :
-- Point d'accès unique : garantit qu'une seule instance de Factory existe
+- Point d'accès unique : garantit qu'une seule instance de Factory existe dans toute l'application
 - Cohérence : tous les composants utilisent la même Factory, donc les mêmes règles de création
-- Simplicité : accès direct via `getInstance()` sans gestion de dépendances complexes
+- Simplicité : accès direct via `getInstance()` sans gestion de dépendances complexes ni conteneur d'injection
 - Centralisation : facilite la maintenance et l'évolution des règles de création
+- Objectif pédagogique : comprendre le principe de centralisation sans la complexité d'un framework d'injection de dépendance
 
-**Anti-pattern évité** : Singleton qui crée du métier. Le Singleton encapsule uniquement la Factory, qui crée des objets techniques.
+**Périmètre d'utilisation** :
+- Le Singleton encapsule uniquement la Factory (`RepositoryFactory`)
+- Il ne crée jamais d'objets métier (LearningPath, PathAssignment, etc.)
+- Il ne gère pas d'état métier, seulement l'instance unique de la Factory
+- Utilisé uniquement pour accéder à la Factory, pas pour stocker des données applicatives
 
-**Limitation acceptée** : Le Singleton rend les tests unitaires plus difficiles (état partagé entre tests). Pour un usage en production, une injection de dépendance (Spring, Guice) serait préférable, mais dépasse le cadre de cet exercice qui vise à comprendre le principe de centralisation.
+**Limites identifiées** :
+- **État partagé entre tests** : L'instance unique peut causer des interférences entre tests unitaires si l'état de la Factory est modifié
+- **Testabilité réduite** : Difficile de remplacer la Factory par un mock dans les tests sans modifier le code
+- **Pas thread-safe** : L'implémentation basique présentée n'est pas thread-safe (problème si accès concurrent)
+- **Couplage global** : Tous les composants dépendent directement de la Factory via `getInstance()`, créant un couplage global
+
+**Quand ne pas utiliser le Singleton** :
+- En production avec un framework d'injection de dépendance (Spring, Guice) : préférer l'injection de la Factory
+- Si plusieurs configurations de Factory sont nécessaires (ex : Factory pour tests, Factory pour production)
+- Si la Factory doit être remplaçable par des mocks dans les tests
+
+**Alternative en production** : Remplacer le Singleton par une injection de dépendance tout en conservant le principe de Factory. La Factory devient un composant géré par le conteneur, injecté là où nécessaire.
+
+**Anti-pattern évité** : Singleton qui crée du métier. Le Singleton encapsule uniquement la Factory, qui crée des objets techniques. Aucune logique métier n'est encapsulée dans le Singleton.
 
 ### Builder non retenu
 
-**Choix** : Builder non utilisé.
+**Choix** : Builder volontairement non utilisé.
 
-**Justification** :
-- Complexité inutile : les repositories n'ont pas de configuration complexe nécessitant un Builder
-- Simplicité suffisante : la création directe via `new` est claire et lisible pour les repositories InMemory
-- Pas de paramètres optionnels multiples : chaque repository se crée sans configuration complexe
-- Les repositories InMemory n'ont pas besoin de configuration (pas de connexion, pas de pool, etc.)
+**Justification du non-usage** :
+- **Complexité inutile** : Les repositories InMemory n'ont pas de configuration complexe nécessitant un Builder. Ils se créent sans paramètres.
+- **Simplicité suffisante** : La création directe via `new` dans la Factory est claire, lisible et suffisante pour ce contexte.
+- **Pas de paramètres optionnels** : Chaque repository se crée sans configuration (pas de connexion, pas de pool, pas de timeout, pas de stratégie de cache).
+- **Pas de construction étape par étape** : La création est atomique, pas besoin de construire l'objet progressivement.
+- **Principe KISS (Keep It Simple, Stupid)** : Ajouter un Builder ajouterait de la complexité sans bénéfice dans ce contexte.
 
-**Cas d'usage futur** : Un Builder pourrait être introduit si la création de repositories nécessite une configuration complexe (pool de connexions, stratégies de cache, configuration de timeout, etc.). Pour l'instant, la Factory suffit.
+**Quand le Builder serait justifié** :
+- Si les repositories nécessitent une configuration complexe avec de nombreux paramètres optionnels
+- Si la création nécessite une construction étape par étape (ex : configurer connexion, puis pool, puis cache)
+- Si plusieurs variantes de repositories doivent être créées avec des configurations différentes
+- Si la lisibilité du code de création serait améliorée (ex : `RepositoryBuilder.new().withConnection(...).withCache(...).build()`)
+
+**Exemple où le Builder serait pertinent** :
+```java
+// Si on avait besoin de ça, le Builder serait justifié :
+JPARepositoryBuilder.new()
+    .withEntityManager(entityManager)
+    .withCacheStrategy(CacheStrategy.LRU)
+    .withConnectionPool(poolSize: 10)
+    .withTimeout(duration: 30s)
+    .build();
+```
+
+**Dans notre cas** : La Factory suffit car `new InMemoryLearningPathRepository()` est simple et lisible. Le Builder serait une sur-ingénierie.
+
+**Décision** : Pattern Builder volontairement écarté car non nécessaire dans ce contexte. La Factory avec création directe est la solution la plus simple et la plus adaptée.
 
 ## Impact sur l'architecture
 
@@ -272,3 +332,32 @@ Le flux de dépendance reste respecté : Infrastructure dépend de Domain, Appli
 **Limite actuelle** : Le Singleton rend les tests plus complexes (état partagé entre tests). Pour isoler les tests, il faudrait réinitialiser l'instance ou utiliser une approche différente.
 
 **Évolution future** : Remplacer le Singleton par une injection de dépendance (Spring, Guice) pour une meilleure testabilité tout en conservant le principe de Factory. La Factory pourrait devenir un composant géré par le conteneur d'injection de dépendance.
+
+## Relier les choix aux objectifs pédagogiques
+
+### Objectif 1 : Structurer l'instanciation
+
+**Réalisation** :
+- Tous les `new` des repositories techniques sont centralisés dans la Factory globale
+- Le point d'instanciation est unique, identifié et lisible
+- Aucun `new` de repository technique n'apparaît dans le métier ou les tests
+
+**Justification du choix** : Factory globale plutôt que factories par domaine car la centralisation maximale est plus importante que la séparation par domaine à ce stade.
+
+### Objectif 2 : Découpler le métier de la technique
+
+**Réalisation** :
+- Le métier (`PathAssignmentService`) ne connaît plus les classes concrètes (InMemory*, JPA*)
+- Le métier dépend uniquement des interfaces du domaine (`LearningPathRepository`, `PathAssignmentRepository`)
+- Un changement technique (InMemory à JPA) ne nécessite qu'une modification dans la Factory
+
+**Justification du choix** : La Factory crée les implémentations techniques, le métier utilise les abstractions. Le Singleton garantit l'accès unique mais n'interfère pas avec le découplage.
+
+### Objectif 3 : Justifier les choix de manière claire et cohérente
+
+**Réalisation** :
+- **Factory** : Retenue car nécessaire pour centraliser les `new` et découpler le métier de la technique
+- **Singleton** : Retenu pour simplifier l'accès à la Factory, avec limites identifiées (état partagé, testabilité)
+- **Builder** : Volontairement écarté car complexité inutile pour des repositories sans configuration
+
+**Cohérence** : Chaque choix est argumenté en fonction du contexte du projet (simplicité, centralisation, découplage) et non appliqué mécaniquement.
