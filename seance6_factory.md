@@ -19,6 +19,16 @@ Attention : la factory ou le singleton ne doit pas créé du métier.
 
 ## Livrable Séance 6 - Factory et Singleton
 
+## Sommaire
+
+1. [Synthèse](#synthèse)
+2. [Contexte du projet](#contexte-du-projet)
+3. [Factory globale](#factory-globale)
+4. [Schéma de création des objets](#schéma-de-création-des-objets)
+5. [Justification des choix](#justification-des-choix)
+6. [Impact sur l'architecture](#impact-sur-larchitecture)
+7. [Relier les choix aux objectifs pédagogiques](#relier-les-choix-aux-objectifs-pédagogiques)
+
 ## Synthèse
 
 Ce livrable présente l'introduction d'une Factory globale associée au pattern Singleton pour centraliser la création des objets techniques (repositories) dans le contexte du module learning-module. L'objectif est de découpler le métier de la création de ses dépendances techniques, garantissant un point d'instanciation unique et facilitant l'évolution des implémentations (InMemory à JPA, MongoDB, etc.).

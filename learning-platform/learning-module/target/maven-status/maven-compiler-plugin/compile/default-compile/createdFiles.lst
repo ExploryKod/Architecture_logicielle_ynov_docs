@@ -3,6 +3,7 @@ com/learningplatform/learning/domain/repository/LearningPathRepository.class
 com/learningplatform/learning/infrastructure/repository/InMemoryPathAssignmentRepository.class
 com/learningplatform/learning/domain/exception/BusinessRuleException.class
 com/learningplatform/learning/infrastructure/repository/InMemoryLearningPathRepository.class
+com/learningplatform/learning/infrastructure/factory/RepositoryFactory.class
 com/learningplatform/learning/domain/model/PathAssignment.class
 com/learningplatform/learning/domain/model/PathStatus.class
 com/learningplatform/learning/domain/repository/PathAssignmentRepository.class

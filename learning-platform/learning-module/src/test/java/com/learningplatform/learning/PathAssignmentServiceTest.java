@@ -7,8 +7,7 @@ import com.learningplatform.learning.domain.model.PathAssignment;
 import com.learningplatform.learning.domain.model.PathStatus;
 import com.learningplatform.learning.domain.repository.LearningPathRepository;
 import com.learningplatform.learning.domain.repository.PathAssignmentRepository;
-import com.learningplatform.learning.infrastructure.repository.InMemoryLearningPathRepository;
-import com.learningplatform.learning.infrastructure.repository.InMemoryPathAssignmentRepository;
+import com.learningplatform.learning.infrastructure.factory.RepositoryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,13 +20,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests unitaires pour PathAssignmentService.
- * Ces tests démontrent le découplage métier/stockage :
+ * Ces tests démontrent le découplage métier/stockage et métier/création :
  * - Aucune base de données démarrée
  * - Aucune configuration datasource
  * - Aucun ORM initialisé
  * - Aucun serveur applicatif
  * 
- * Seuls les objets métier et repositories InMemory sont utilisés.
+ * Les repositories sont créés via la Factory globale (RepositoryFactory),
+ * démontrant le point d'instanciation centralisé.
+ * Le métier ne connaît plus les classes concrètes (InMemory*), seulement les interfaces.
  */
 @DisplayName("Tests unitaires PathAssignmentService - Découplage métier/stockage")
 class PathAssignmentServiceTest {
@@ -38,9 +39,14 @@ class PathAssignmentServiceTest {
     
     @BeforeEach
     void setUp() {
-        // Initialisation des repositories InMemory pour chaque test
-        learningPathRepository = new InMemoryLearningPathRepository();
-        pathAssignmentRepository = new InMemoryPathAssignmentRepository();
+        // Utilisation de la Factory globale pour créer les repositories
+        // Le métier ne connaît plus les classes concrètes (InMemory*)
+        // Tous les "new" sont centralisés dans la Factory
+        RepositoryFactory factory = RepositoryFactory.getInstance();
+        
+        learningPathRepository = factory.createLearningPathRepository();
+        pathAssignmentRepository = factory.createPathAssignmentRepository();
+        
         pathAssignmentService = new PathAssignmentService(
             learningPathRepository,
             pathAssignmentRepository
