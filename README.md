@@ -16,4 +16,7 @@ Je rassemble ici les documents et code pour répondre aux exercices d'architectu
 - Lien vers le livrable de la séance 5 (`seance5_repositoriesdao.md`) : <a href="./seance5_repositoriesdao.md">Cliquez ici</a>
 
 ## Séance 6 Factory - Lien vers le document : 
-- Lien vers le livrable de la séance 5 (`seance6_factory.md`) : <a href="./seance6_factory.md">Cliquez ici</a>
+- Lien vers le livrable de la séance 6 (`seance6_factory.md`) : <a href="./seance6_factory.md">Cliquez ici</a>
+
+## Séance 7 Industrialisation - Lien vers le document : 
+- Lien vers le livrable de la séance 7 (`seance7_industrialisation.md`) : <a href="./seance7_industrialisation.md">Cliquez ici</a>
