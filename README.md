@@ -20,3 +20,6 @@ Je rassemble ici les documents et code pour répondre aux exercices d'architectu
 
 ## Séance 7 Industrialisation - Lien vers le document : 
 - Lien vers le livrable de la séance 7 (`seance7_industrialisation.md`) : <a href="./seance7_industrialisation.md">Cliquez ici</a>
+
+## Séance 8 Façade - Lien vers le document : 
+- Lien vers le livrable de la séance 8 (`seance8_facade.md`) : <a href="./seance8_facade.md">Cliquez ici</a>
