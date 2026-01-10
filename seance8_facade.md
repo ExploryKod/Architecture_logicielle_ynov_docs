@@ -12,6 +12,10 @@ Plateforme SaaS éducative permettant aux écoles de créer des parcours d'appre
 - Validation d'un parcours par un professeur
 - Lister les parcours validés disponibles pour assignation aux élèves
 
+Nous exposons deux façades ici par commodité mais le mieux serait de créer un document "point d'entrée" tel le README pricipal qui va renvoyer aux différentes façade qui seront positionnées stratégiquement proche des dossiers qui les concerne. Cependant, certaines sont justement là pour simplifier la complexité. On aura donc pas trop de façade mais seulement quelques unes qui regroupent plusieurs services. Elles sont placé de manière à être comprise dans leur environnement mais trouvable trés facilement sans plusieurs fichiers pour les trouver mais juste une porte d'entrée de toute les façade. Une fois cela connu, le développeur va juste consulter cette porte d'entrée et les façades et devraient en ressortir avec une bonne vision de l'application. 
+
+Ici deux façades dont les enjeux sont fort pour notre application: 
+
 ## LearningPathFacade
 
 **Rôle** : Exposer les règles métier des parcours d'apprentissage, organiser le flux de création, validation et assignation.
@@ -176,13 +180,3 @@ finalizeCollaborativePath()
     ↓
 LearningPath (DRAFT) créé
 ```
-
-## Bénéfices des Facades
-
-**Simplification** : Un seul point d'entrée pour des opérations métier complexes qui nécessitent plusieurs services.
-
-**Langage métier** : Les méthodes utilisent un vocabulaire compréhensible par les acteurs métier (professeur, élève, parcours, profil).
-
-**Organisation du flux** : Chaque Facade orchestre les appels aux services dans le bon ordre, garantissant le respect des règles métier.
-
-**Découplage** : Le frontend n'a pas besoin de connaître tous les services techniques. Il appelle simplement la Facade avec des paramètres métier.
