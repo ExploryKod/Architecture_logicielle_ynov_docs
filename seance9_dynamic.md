@@ -28,6 +28,218 @@ Dans les deux cas ils permettent de rendre l'application testable, maintenable, 
 
 ### Résolution de la problématique : pseudo-code sur notre exemple (strategy + decorator)
 
-1. Pattern strategy : résoudre le problème A
+#### 1. Pattern Strategy : résoudre le problème A
 
-2. Pattern decorator : résoudre le problème B
+**Interface Strategy** : Décision métier pure sur l'éligibilité d'un niveau
+
+```pseudo-code
+interface LevelEligibilityStrategy {
+    canAssignLevel(path: LearningPath, student: Student, level: Level) -> boolean
+    // Décision pure : reçoit les données déjà chargées, ne fait QUE décider
+    // Pas d'appel repository, pas d'appel API
+}
+```
+
+**Pourquoi cette interface répond au problème A** : Elle centralise la décision d'éligibilité de niveau dans une interface unique. Au lieu d'avoir des if/else dispersés dans chaque parcours, toutes les règles de niveau sont regroupées dans des stratégies isolées et remplaçables.
+
+**Implémentation 1 : Strategy basée sur le niveau standard (TOEIC-like)**
+
+```pseudo-code
+class StandardLevelEligibilityStrategy implements LevelEligibilityStrategy {
+    canAssignLevel(path: LearningPath, student: Student, level: Level) -> boolean:
+        // Règle métier : l'élève doit avoir le niveau requis ou le niveau immédiatement inférieur
+        studentLevel = student.getCurrentLevel()
+        requiredLevel = path.getRequiredLevel()
+        
+        return studentLevel >= requiredLevel 
+            or studentLevel == getPreviousLevel(requiredLevel)
+        // Décision simple : comparaison de niveaux standardisés (A1, B2, C1)
+}
+```
+
+**Pourquoi cette stratégie répond au problème A** : Elle implémente une règle standardisée comme le TOEIC. Le niveau est comparé de manière unifiée (A1 < B2 < C1), créant la lisibilité souhaitée sur le marché. Plus besoin de if/else spécifiques par parcours.
+
+**Implémentation 2 : Strategy basée sur le niveau personnalisé par école**
+
+```pseudo-code
+class SchoolCustomLevelEligibilityStrategy implements LevelEligibilityStrategy {
+    canAssignLevel(path: LearningPath, student: Student, level: Level) -> boolean:
+        // Règle métier : utilise le référentiel de niveaux de l'école
+        schoolLevelSystem = student.getSchool().getLevelSystem()
+        studentLevel = student.getCurrentLevelInSchoolSystem()
+        requiredLevel = path.getRequiredLevelInSchoolSystem()
+        
+        return schoolLevelSystem.isEligible(studentLevel, requiredLevel)
+        // Décision : utilise le système de niveaux propre à l'école
+}
+```
+
+**Pourquoi cette stratégie répond au problème A** : Elle permet à chaque école d'avoir son propre référentiel de niveaux tout en gardant une interface unifiée. L'école définit sa logique de comparaison (ex: "Débutant", "Intermédiaire", "Avancé"), mais le code métier reste stable.
+
+**Utilisation dans le service**
+
+```pseudo-code
+class PathAssignmentService {
+    constructor(
+        learningPathRepository: LearningPathRepository,
+        pathAssignmentRepository: PathAssignmentRepository,
+        levelEligibilityStrategy: LevelEligibilityStrategy  // Strategy injectée
+    )
+    
+    assignPathToStudent(pathId: UUID, studentId: UUID, level: Level):
+        // 1. Le service charge les données (I/O)
+        path = learningPathRepository.findPathById(pathId)
+        student = userService.findStudentById(studentId)
+        
+        // 2. La Strategy décide uniquement (pas d'I/O)
+        if not levelEligibilityStrategy.canAssignLevel(path, student, level):
+            throw BusinessRuleException("Le niveau n'est pas éligible pour cet élève")
+        
+        // 3. Le service exécute l'assignation
+        pathAssignmentRepository.assignPathToStudent(pathId, studentId, level)
+}
+```
+
+**Pourquoi cette utilisation répond au problème A** : Le service ne contient plus de if/else sur les niveaux. Il délègue la décision à la Strategy. Pour ajouter une nouvelle règle de niveau (ex: niveau par compétence), on crée une nouvelle Strategy sans modifier le service.
+
+#### 2. Pattern Decorator : résoudre le problème B
+
+**Service de base (règle métier pure - ne change jamais)**
+
+```pseudo-code
+class PathAssignmentService {
+    constructor(
+        learningPathRepository: LearningPathRepository,
+        pathAssignmentRepository: PathAssignmentRepository
+    )
+    
+    assignPathToStudent(pathId: UUID, studentId: UUID) -> AssignmentResult:
+        // Règle métier : validation + assignation
+        // Cette logique ne change JAMAIS
+        path = learningPathRepository.findPathById(pathId)
+        
+        if path == null:
+            throw BusinessRuleException("Parcours inexistant")
+        
+        if path.getStatus() != VALIDATED:
+            throw BusinessRuleException("Parcours non validé")
+        
+        pathAssignmentRepository.assignPathToStudent(pathId, studentId)
+        return AssignmentResult(success: true, pathId, studentId)
+}
+```
+
+**Pourquoi ce service répond au problème B** : La règle métier d'assignation est isolée et stable. Elle ne contient aucune logique de notification, ce qui permet d'enrichir le comportement sans la modifier.
+
+**Decorator 1 : Notification au professeur**
+
+```pseudo-code
+class TeacherNotificationDecorator extends PathAssignmentService {
+    notificationService: NotificationService
+    wrapped: PathAssignmentService
+    
+    constructor(wrapped: PathAssignmentService, notificationService: NotificationService):
+        this.wrapped = wrapped
+        this.notificationService = notificationService
+    
+    assignPathToStudent(pathId: UUID, studentId: UUID) -> AssignmentResult:
+        // Appel de la règle métier de base (NE CHANGE JAMAIS)
+        result = wrapped.assignPathToStudent(pathId, studentId)
+        
+        // Enrichissement : notification au professeur après assignation
+        if result.success:
+            teacherId = path.getTeacherId()
+            notificationService.notifyTeacher(teacherId, 
+                "Un parcours a été assigné à un élève", {pathId, studentId})
+        
+        return result
+}
+```
+
+**Pourquoi ce Decorator répond au problème B** : Il ajoute la notification au professeur sans modifier la règle métier. Le service de base reste inchangé, respectant le principe Open/Closed.
+
+**Decorator 2 : Notification d'alerte sur le suivi**
+
+```pseudo-code
+class ProgressAlertNotificationDecorator extends PathAssignmentService {
+    notificationService: NotificationService
+    wrapped: PathAssignmentService
+    
+    assignPathToStudent(pathId: UUID, studentId: UUID) -> AssignmentResult:
+        result = wrapped.assignPathToStudent(pathId, studentId)
+        
+        // Enrichissement : alerte si l'élève a déjà plusieurs parcours en cours
+        if result.success:
+            activePaths = pathAssignmentRepository.countActivePaths(studentId)
+            if activePaths > 3:
+                teacherId = path.getTeacherId()
+                notificationService.notifyTeacher(teacherId,
+                    "Alerte : l'élève a maintenant " + activePaths + " parcours actifs", 
+                    {studentId, activePaths})
+        
+        return result
+}
+```
+
+**Pourquoi ce Decorator répond au problème B** : Il ajoute une notification d'alerte spécifique au suivi sans toucher à la règle métier. On peut empiler plusieurs Decorators pour combiner différentes notifications.
+
+**Decorator 3 : Logs métier**
+
+```pseudo-code
+class LoggingPathAssignmentDecorator extends PathAssignmentService {
+    logger: Logger
+    wrapped: PathAssignmentService
+    
+    assignPathToStudent(pathId: UUID, studentId: UUID) -> AssignmentResult:
+        // Log AVANT l'assignation
+        logger.info("Assignation de parcours demandée", {pathId, studentId})
+        
+        result = wrapped.assignPathToStudent(pathId, studentId)
+        
+        // Log APRÈS l'assignation
+        logger.info("Assignation terminée", {pathId, studentId, success: result.success})
+        
+        return result
+}
+```
+
+**Pourquoi ce Decorator répond au problème B** : Il ajoute la traçabilité métier sans modifier la règle d'assignation. Les logs enrichissent le comportement sans le changer.
+
+**Composition (empilement des Decorators)**
+
+```pseudo-code
+// Service de base (règle métier pure)
+baseService = new PathAssignmentService(repository, assignmentRepo)
+
+// Enrichissements empilés (la règle métier n'est jamais modifiée)
+enrichedService = new LoggingPathAssignmentDecorator(
+    new TeacherNotificationDecorator(
+        new ProgressAlertNotificationDecorator(
+            baseService  // Règle métier pure au centre
+        )
+    )
+)
+
+// Utilisation : la règle métier est enrichie mais jamais modifiée
+enrichedService.assignPathToStudent(pathId, studentId)
+```
+
+**Pourquoi cette composition répond au problème B** : On peut ajouter ou retirer des notifications sans modifier le service de base. Chaque Decorator fait une chose précise (logs, notification professeur, alerte suivi), et on les combine selon les besoins. Plus de répétition de code, respect du principe Open/Closed.
+
+### Schéma d'intégration avec la Facade
+
+```
+LearningPathFacade
+    ↓
+PathAssignmentService (enrichi avec Decorators)
+    ↓
+LoggingDecorator → TeacherNotificationDecorator → ProgressAlertNotificationDecorator
+    ↓
+PathAssignmentService (règle métier pure)
+    ↓
+LevelEligibilityStrategy (décision sur les niveaux)
+    ↓
+Repository
+```
+
+**Pourquoi cette intégration est cohérente** : La Facade (séance 8) utilise le service enrichi sans connaître les détails. Elle bénéficie automatiquement des notifications et logs sans modification. La Strategy est utilisée en interne par le service, invisible pour la Facade.
