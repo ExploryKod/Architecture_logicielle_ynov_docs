@@ -23,3 +23,6 @@ Je rassemble ici les documents et code pour répondre aux exercices d'architectu
 
 ## Séance 8 Façade - Lien vers le document : 
 - Lien vers le livrable de la séance 8 (`seance8_facade.md`) : <a href="./seance8_facade.md">Cliquez ici</a>
+
+## Séance 9 Rendre l'application dynamique - Lien vers le document : 
+- Lien vers le livrable de la séance 9 (`seance9_dynamic.md`) : <a href="./seance9_dynamic.md">Cliquez ici</a>
